@@ -14,7 +14,7 @@ rosneuro_buffers depends on the following @rosneuro packages:
 - [rosneuro/rosneuro_data](https://github.com/rosneuro/rosneuro_data) 
 
 ## Usage
-Once instanciated, a buffer plugin creates a buffer of **NeuroData** with the provided type **T** and size *nsamples*x*nchannels*. The buffer is initially filled with *nan* values. The function member *bool add(...)* allows to update the buffer with new *NeuroData* and the function member *bool isfull(void)* verifies when the buffer is full. The buffer is updated with new *NeuroData* according to the replacement policy implemented in the provided plugin.
+Once instanciated, a buffer plugin creates a buffer of **NeuroData** with the provided type **T** and size *nsamples*x*nchannels*. The buffer is initially filled with *nan* values. The function member *void add(...)* allows to update the buffer with new *NeuroData* and the function member *bool isfull(void)* verifies when the buffer is full. The buffer is updated with new *NeuroData* according to the replacement policy implemented in the provided plugin.
 In the case of **rosneuro::RingBuffer** plugin, the data replacement is performed according to a *FIFO* policy. 
 
 The buffer can be configured in the following way:
@@ -84,3 +84,186 @@ The RingBuffer provides plugin for three type of NeuroData: *int*, *float*, and 
 - RingBufferInt (for *rosneuro::NeuroData\<int\>*)
 - RingBufferFloat (for *rosneuro::NeuroData\<float\>*)
 - RingBufferDouble (for *rosneuro::NeuroData\<double\>*)
+
+## How to implement a custom rosneuro::Buffer plugin
+In the following section, we describe how to implement a custom plugin based on *rosneuro::Buffer* class. We assume that the plugin is implemente in a new package named **mybuffers_package** and the plugin is named **MyBuffer**. Furthermore we assume that the *mybuffers_package* is structured as follows:
+```
+mybuffers_package/
+	|- include/mybuffers_package/MyBuffer.hpp
+	|- src/
+	   |- MyBuffer.cpp
+	   |- mybuffer.cpp
+	|- CMakeLists.txt
+	|- package.xml
+	|- plugin_mybuffer.xml
+```
+The *MyBuffer* class derives from the *rosneuro::Buffer* base class and it requires to implement the two pure virtual function members *void add(const NeuroData\<T\>& frame)* and *bool configure(void)*. Here an example of the implementation of the class in the *include/mybuffers_package/MyBuffer.hpp* file:
+```cpp
+#ifndef ROSNEURO_MYBUFFER_HPP
+#define ROSNEURO_MYBUFFER_HPP
+
+#include "rosneuro_buffers/Buffer.hpp"
+
+namespace rosneuro {
+
+template<typename T>
+class MyBuffer : public Buffer<T> {
+
+	public:
+		MyBuffer(void) {};
+		~MyBuffer(void) {};
+
+		bool configure(void);
+		void add(const NeuroData<T>& frame);
+
+};
+
+template<typename T>
+bool MyBuffer<T>::configure(void) {
+
+	unsigned int nsamples;
+	unsigned int nchannels;
+
+	if (!Buffer<T>::getParam(std::string("nsamples"), nsamples)) {
+    	ROS_ERROR("[MyBuffer] Cannot find param nsamples");
+		return false;
+	}
+	
+	if (!Buffer<T>::getParam(std::string("nchannels"), nchannels)) {
+    	ROS_ERROR("[MyBuffer] Cannot find param nchannels");
+		return false;
+	}
+
+	this->data_.resize(nsamples, nchannels);
+	this->data_.fill(static_cast<T>(NAN));
+
+	return true;
+}
+
+template<typename T>
+void MyBuffer<T>::add(const NeuroData<T>& frame) {
+
+	// Specific implementation of MyBuffer
+}
+
+}
+
+#endif
+```
+Notice that the function member *MyBuffer/<T/>::configure(void)* is automatically called inside the method *rosneuro::Buffer/<T/>::configure(const std::string& name)*. Therefore, in order to execute the function member *MyBuffer/<T/>::configure(void)* is required to call the function *bool configure(const std::string& name)* in the executable with argument the name of the YAML structure.
+
+In *src/MyBuffer.cpp*, we just add the plugin macros:
+```cpp
+#include "rosneuro_buffers/MyBuffer.hpp"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_EXPORT_CLASS(rosneuro::MyBuffer<int>,    rosneuro::Buffer<int>)
+PLUGINLIB_EXPORT_CLASS(rosneuro::MyBuffer<float>,  rosneuro::Buffer<float>)
+PLUGINLIB_EXPORT_CLASS(rosneuro::MyBuffer<double>, rosneuro::Buffer<double>)
+```
+In the *CMakeLists.txt* we need to provide the rules to compile the plugin library:
+```
+cmake_minimum_required(VERSION 2.8.3)
+project(mybuffers_package)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+find_package(catkin REQUIRED COMPONENTS 
+			 roscpp 
+			 roslib
+			 std_msgs
+			 pluginlib
+			 rosneuro_data
+			 rosneuro_msgs)
+find_package(PkgConfig)
+
+SET(CMAKE_BUILD_TYPE RelWithDebInfo)
+
+catkin_package(
+  INCLUDE_DIRS 
+	include
+  LIBRARIES 
+	${PROJECT_NAME}_mybuffer
+  CATKIN_DEPENDS
+    roslib
+  	roscpp
+	std_msgs
+	pluginlib
+	rosneuro_data
+	rosneuro_msgs
+  DEPENDS
+)
+
+
+###########
+## Build ##
+###########
+
+include_directories(${catkin_INCLUDE_DIRS} include)
+
+add_library(${PROJECT_NAME}_mybuffer src/MyBuffer.cpp)
+target_link_libraries(${PROJECT_NAME}_mybuffer ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME}_mybuffer ${catkin_EXPORTED_TARGETS})
+
+#################
+## Executables ##
+#################
+
+add_executable(mybuffer src/mybuffer.cpp)
+target_link_libraries(mybuffer ${PROJECT_NAME}_mybuffer)
+```
+In the *package.xml* we need to add the dependency to the pluginlib package and to export our mybuffer plugin:
+```xml
+<?xml version="1.0"?>
+<package format="2">
+  <name>mybuffers_package</name>
+  <version>0.0.1</version>
+  <description>ROSNeuro buffers package</description>
+  <author email="luca.tonin@dei.unipd.it">Luca Tonin</author>
+  <maintainer email="luca.tonin@dei.unipd.it">Luca Tonin</maintainer>
+
+  <license>GPLv3</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>message_generation</depend>
+
+  <depend>rosneuro_data</depend>
+  <depend>rosneuro_msgs</depend>
+  <exec_depend>message_runtime</exec_depend>
+  <depend>eigen</depend>
+  <depend>roslib</depend>
+  <depend>rosconsole</depend>
+  <build_depend>pluginlib</build_depend>
+  <exec_depend>pluginlib</exec_depend>
+
+  <export>
+    <rosneuro_buffers plugin="${prefix}/plugin_mybuffer.xml" />
+  </export>
+  
+
+</package>
+```
+Finally, we need to add the description of the plugin in the *plugin_mybuffer.xml* file:
+```xml
+<class_libraries>
+  <library path="lib/libmybuffers_package">
+    <class name="mybuffers_package/MyBufferDouble" type="rosneuro::MyBuffer<double>"
+        base_class_type="rosneuro::Buffer<double>">
+      <description>MyBuffer with doubles</description>
+    </class>
+    
+	<class name="mybuffers_package/MyBufferFloat" type="rosneuro::MyBuffer<float>"
+        base_class_type="rosneuro::Buffer<float>">
+      <description>MyBuffer with floats</description>
+    </class>
+    
+    <class name="mybuffers_package/MyBufferInt" type="rosneuro::MyBuffer<int>"
+        base_class_type="rosneuro::Buffer<int>">
+      <description>MyBuffer with ints</description>
+    </class>
+  </library>
+</class_libraries> 
+```
+
