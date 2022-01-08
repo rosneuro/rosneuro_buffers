@@ -17,5 +17,14 @@
   <depend>rosneuro_msgs</depend>
   <exec_depend>message_runtime</exec_depend>
   <depend>eigen</depend>
+  <depend>roslib</depend>
+  <depend>rosconsole</depend>
+  <build_depend>pluginlib</build_depend>
+  <exec_depend>pluginlib</exec_depend>
+
+  <export>
+    <rosneuro_buffers plugin="${prefix}/plugin_ringbuffer.xml" />
+  </export>
+  
 
 </package>

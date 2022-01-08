@@ -5,7 +5,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 find_package(catkin REQUIRED COMPONENTS 
 			 roscpp 
+			 roslib
 			 std_msgs
+			 pluginlib
 			 rosneuro_data
 			 rosneuro_msgs)
 
@@ -18,10 +20,12 @@ catkin_package(
   INCLUDE_DIRS 
 	include
   LIBRARIES 
-	${PROJECT_NAME}
+	${PROJECT_NAME}_ringbuffer
   CATKIN_DEPENDS
+    roslib
   	roscpp
 	std_msgs
+	pluginlib
 	rosneuro_data
 	rosneuro_msgs
 
@@ -38,24 +42,15 @@ include_directories(${catkin_INCLUDE_DIRS}
 					include)
 
 add_definitions(${EIGEN3_DEFINITIONS})
-add_library(${PROJECT_NAME}
-			include/${PROJECT_NAME}/Buffer.hpp
-			include/${PROJECT_NAME}/RingBuffer.hpp
-			)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+add_library(${PROJECT_NAME}_ringbuffer src/RingBuffer.cpp)
+target_link_libraries(${PROJECT_NAME}_ringbuffer ${Eigen3_LIBRARIES} ${catkin_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME} 
-			 		  ${Eigen3_LIBRARIES}
-	 				  ${catkin_LIBRARIES})
-
-add_dependencies(${PROJECT_NAME} 
-				 ${catkin_EXPORTED_TARGETS}
-)
+add_dependencies(${PROJECT_NAME}_ringbuffer ${catkin_EXPORTED_TARGETS})
 
 #################
 ## Executables ##
 #################
 
-add_executable(test_ringbuffer src/test_ringbuffer.cpp)
-target_link_libraries(test_ringbuffer ${PROJECT_NAME})
+add_executable(test_ringbuffer test/test_ringbuffer.cpp)
+target_link_libraries(test_ringbuffer ${PROJECT_NAME}_ringbuffer)

@@ -1,0 +1,18 @@
+<class_libraries>
+  <library path="lib/librosneuro_buffers_ringbuffer">
+    <class name="rosneuro_buffers/RingBufferDouble" type="rosneuro::RingBuffer<double>"
+        base_class_type="rosneuro::Buffer<double>">
+      <description>RingBuffer with doubles</description>
+    </class>
+    
+	<class name="rosneuro_buffers/RingBufferFloat" type="rosneuro::RingBuffer<float>"
+        base_class_type="rosneuro::Buffer<float>">
+      <description>RingBuffer with floats</description>
+    </class>
+    
+    <class name="rosneuro_buffers/RingBufferInt" type="rosneuro::RingBuffer<int>"
+        base_class_type="rosneuro::Buffer<int>">
+      <description>RingBuffer with ints</description>
+    </class>
+  </library>
+</class_libraries> 

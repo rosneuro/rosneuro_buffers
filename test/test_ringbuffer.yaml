@@ -1,0 +1,6 @@
+RingBufferCfgTest:
+  name: ringbuffer
+  type: RingBufferFloat
+  params: 
+    nsamples: 10
+    nchannels: 3
