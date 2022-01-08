@@ -218,7 +218,7 @@ In the *package.xml* we need to add the dependency to the pluginlib package and 
 <package format="2">
   <name>mybuffers_package</name>
   <version>0.0.1</version>
-  <description>ROSNeuro buffers package</description>
+  <description>My buffers package</description>
   <author email="luca.tonin@dei.unipd.it">Luca Tonin</author>
   <maintainer email="luca.tonin@dei.unipd.it">Luca Tonin</maintainer>
 
