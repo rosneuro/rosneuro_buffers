@@ -54,3 +54,11 @@ add_dependencies(${PROJECT_NAME}_ringbuffer ${catkin_EXPORTED_TARGETS})
 
 add_executable(test_ringbuffer test/test_ringbuffer.cpp)
 target_link_libraries(test_ringbuffer ${PROJECT_NAME}_ringbuffer)
+
+#################
+##   Install   ##
+#################
+install(TARGETS ${PROJECT_NAME}_ringbuffer
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
