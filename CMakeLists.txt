@@ -44,13 +44,14 @@ include_directories(${catkin_INCLUDE_DIRS}
 add_definitions(${EIGEN3_DEFINITIONS})
 
 add_library(${PROJECT_NAME}_ringbuffer src/RingBuffer.cpp)
-target_link_libraries(${PROJECT_NAME}_ringbuffer ${Eigen3_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_ringbuffer ${Eigen3_LIBRARIES} 
+												 ${catkin_LIBRARIES})
 
-add_dependencies(${PROJECT_NAME}_ringbuffer ${catkin_EXPORTED_TARGETS})
+#add_dependencies(${PROJECT_NAME}_ringbuffer ${catkin_EXPORTED_TARGETS})
 
 #################
 ## Executables ##
 #################
 
 add_executable(test_ringbuffer test/test_ringbuffer.cpp)
-target_link_libraries(test_ringbuffer ${PROJECT_NAME}_ringbuffer)
+target_link_libraries(test_ringbuffer ${PROJECT_NAME}_ringbuffer ${CATKIN_LIBRARIES})

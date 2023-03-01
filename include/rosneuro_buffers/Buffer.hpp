@@ -7,21 +7,46 @@
 
 namespace rosneuro {
 
+template<typename T> using DynamicMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
+
 template <typename T>
 class Buffer {
 
 	public:
-		Buffer(void) : configured_(false) {};
-		virtual ~Buffer(void) {};
+		Buffer(void); 		
+		virtual ~Buffer(void);
 
 		Buffer(const Buffer&) = delete;
 		Buffer& operator=(const Buffer&) = delete;
 
-		virtual void add(const NeuroData<T>& frame) = 0;
-		void get(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& data);
+		virtual bool configure(void) = 0;
+		virtual bool add(const Eigen::Ref< const DynamicMatrix<T> >& in) = 0;
+		DynamicMatrix<T> get(void);
 
+		void resize(int rows, int cols);
+		void clear(void);
 		bool isfull(void);
+		int rows(void) const;
+		int cols(void) const;
 		
+		std::string type(void) const;
+		std::string name(void) const;
+		
+	protected:
+		bool is_configured_;
+		bool is_set_;
+		std::string type_;
+		std::string name_;
+	
+	protected:
+		DynamicMatrix<T> data_;
+	
+	public: 
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	// Configuration stuff - To be moved to friend class
+	public: 
+
 		bool getParam(const std::string& name, std::string& value) const;
 		bool getParam(const std::string& name, bool& value) const;
 		bool getParam(const std::string& name, double& value) const;
@@ -33,34 +58,34 @@ class Buffer {
 		
 		bool configure(const std::string& param_name);
 		bool configure(XmlRpc::XmlRpcValue& config);
-		std::string type(void) const;
-		std::string name(void) const;
-		
-	
+
 	protected:
-		virtual bool configure(void) = 0;
 		bool loadConfiguration(XmlRpc::XmlRpcValue& config);
 		bool setNameAndType(XmlRpc::XmlRpcValue& config);
-
 	protected:
-		bool configured_;
-		std::string type_;
-		std::string name_;
 		std::map<std::string, XmlRpc::XmlRpcValue> params_;
-
 	private:
 		ros::NodeHandle nh_;
 
-	protected:
-		Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> data_;
-
-
-	public: 
-		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-			
-
 };
+
+template<typename T>
+Buffer<T>::Buffer(void) : is_configured_(false), is_set_(false) {}
+
+template<typename T>
+Buffer<T>::~Buffer(void) {}
+
+template<typename T>
+void Buffer<T>::resize(int rows, int cols) {
+	this->data_.resize(rows, cols);
+	this->clear();
+}
+
+template<typename T>
+void Buffer<T>::clear(void) {
+	this->data_.fill(static_cast<T>(NAN));
+}
+
 
 template<typename T>
 bool Buffer<T>::isfull(void) {
@@ -68,8 +93,18 @@ bool Buffer<T>::isfull(void) {
 }
 
 template<typename T>
-void Buffer<T>::get(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& data) {
-	data = this->data_;
+DynamicMatrix<T> Buffer<T>::get(void) {
+	return this->data_;
+}
+
+template<typename T>
+int Buffer<T>::rows(void) const {
+	return this->data_.rows();
+}
+
+template<typename T>
+int Buffer<T>::cols(void) const {
+	return this->data_.cols();
 }
 
 template<typename T>
@@ -102,6 +137,8 @@ bool Buffer<T>::setNameAndType(XmlRpc::XmlRpcValue& config) {
 	return true;
 }
 
+/*** Configure stuff - To be moved to friend class **/
+
 template<typename T>
 bool Buffer<T>::configure(const std::string& param_name) {
 	
@@ -118,15 +155,15 @@ bool Buffer<T>::configure(const std::string& param_name) {
 
 template<typename T>
 bool Buffer<T>::configure(XmlRpc::XmlRpcValue& config) {
-	if (configured_) {
+	if (this->is_configured_) {
 		ROS_ERROR("Buffer %s of type %s already being reconfigured", this->name_.c_str(), this->type_.c_str());
 	}
-	this->configured_ = false;
+	this->is_configured_ = false;
 	bool retval = true;
 	
 	retval = retval && this->loadConfiguration(config);
 	retval = retval && this->configure();
-	configured_ = retval;
+	this->is_configured_ = retval;
 	return retval;
 }
 

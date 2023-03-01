@@ -9,64 +9,49 @@ template<typename T>
 class RingBuffer : public Buffer<T> {
 
 	public:
-		RingBuffer(void) {};
-		RingBuffer(const unsigned int nsamples, const unsigned int nchannels);
+		RingBuffer(void);
 		~RingBuffer(void) {};
 
 		bool configure(void);
-		void add(const NeuroData<T>& frame);
-
+		bool add(const Eigen::Ref< const DynamicMatrix<T> >& in);
 };
 
 template<typename T>
-RingBuffer<T>::RingBuffer(const unsigned int nsamples, const unsigned int nchannels) {
-	this->data_.resize(nsamples, nchannels);
-	this->data_.fill(static_cast<T>(NAN));
-}
+RingBuffer<T>::RingBuffer(void) {}
 
 template<typename T>
 bool RingBuffer<T>::configure(void) {
 
-	unsigned int nsamples;
-	unsigned int nchannels;
+	int size;
 
-	if (!Buffer<T>::getParam(std::string("nsamples"), nsamples)) {
-    	ROS_ERROR("[Buffer] Cannot find param nsamples");
+	if (!Buffer<T>::getParam(std::string("size"), size)) {
+    	ROS_ERROR("[Buffer] Cannot find param size");
 		return false;
 	}
+
+	this->resize(size, 1);
 	
-	if (!Buffer<T>::getParam(std::string("nchannels"), nchannels)) {
-    	ROS_ERROR("[Buffer] Cannot find param nchannels");
-		return false;
-	}
-
-	this->data_.resize(nsamples, nchannels);
-	this->data_.fill(static_cast<T>(NAN));
-
 	return true;
-
 }
 
 template<typename T>
-void RingBuffer<T>::add(const NeuroData<T>& frame) {
+bool RingBuffer<T>::add(const Eigen::Ref< const DynamicMatrix<T> >& in) {
 
-	unsigned int ns_frame = frame.nsamples();
-	unsigned int nc_frame = frame.nchannels();
-	unsigned int ns_buffer = this->data_.rows();
-	unsigned int nc_buffer = this->data_.cols();
-
-	if (nc_frame != nc_buffer) {
-		throw std::runtime_error("[Error] - Different number of channels between buffer and frame");
+	if(this->is_configured_ == false) {
+		ROS_ERROR("[%s] Buffer is not configured", this->name().c_str());
+		return false;
 	}
 
-	T* cdata = const_cast<T*>(frame.data());
-	Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> eframe(cdata, ns_frame, nc_frame);
+	if(this->is_set_ == false) {
+		this->resize(this->rows(), in.cols());
+		this->is_set_ = true;
+	}
 
-	Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> cbuffer(ns_buffer - ns_frame, nc_buffer);
-	cbuffer = this->data_.bottomRows(ns_buffer - ns_frame);
-	this->data_ << cbuffer, eframe;
+	DynamicMatrix<T> cbuffer = this->data_.bottomRows(this->data_.rows() - in.rows());
+	this->data_ << cbuffer, in;
+
+	return true;
 }
-
 
 }
 
