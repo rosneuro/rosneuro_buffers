@@ -55,3 +55,14 @@ target_link_libraries(${PROJECT_NAME}_ringbuffer ${Eigen3_LIBRARIES}
 
 add_executable(test_ringbuffer test/test_ringbuffer.cpp)
 target_link_libraries(test_ringbuffer ${PROJECT_NAME}_ringbuffer ${CATKIN_LIBRARIES})
+
+#################
+##   Install   ##
+#################
+install(TARGETS ${PROJECT_NAME}_ringbuffer
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
+install(FILES plugin_ringbuffer.xml
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
