@@ -7,9 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
 			 roscpp 
 			 roslib
 			 std_msgs
-			 pluginlib
-			 rosneuro_data
-			 rosneuro_msgs)
+			 pluginlib)
 
 find_package(Eigen3 REQUIRED)
 find_package(PkgConfig)
@@ -26,8 +24,6 @@ catkin_package(
   	roscpp
 	std_msgs
 	pluginlib
-	rosneuro_data
-	rosneuro_msgs
 
   DEPENDS
 )

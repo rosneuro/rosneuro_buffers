@@ -3,7 +3,6 @@
 
 #include <ros/ros.h>
 #include <Eigen/Dense>
-#include "rosneuro_data/NeuroData.hpp"
 
 namespace rosneuro {
 

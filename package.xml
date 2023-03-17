@@ -13,8 +13,6 @@
   <depend>std_msgs</depend>
   <depend>message_generation</depend>
 
-  <depend>rosneuro_data</depend>
-  <depend>rosneuro_msgs</depend>
   <exec_depend>message_runtime</exec_depend>
   <depend>eigen</depend>
   <depend>roslib</depend>

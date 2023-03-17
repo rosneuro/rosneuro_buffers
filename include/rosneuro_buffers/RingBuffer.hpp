@@ -12,24 +12,34 @@ class RingBuffer : public Buffer<T> {
 		RingBuffer(void);
 		~RingBuffer(void) {};
 
+		bool set(unsigned int nrows, unsigned int ncols);
+
 		bool configure(void);
 		bool add(const Eigen::Ref< const DynamicMatrix<T> >& in);
+	
+	private:
+		unsigned int size_;
 };
 
 template<typename T>
 RingBuffer<T>::RingBuffer(void) {}
 
 template<typename T>
+bool RingBuffer<T>::set(unsigned int nrows, unsigned int ncols) {
+	this->resize(nrows, ncols);
+	this->is_set_ = true;
+
+	return true;
+}
+
+template<typename T>
 bool RingBuffer<T>::configure(void) {
 
-	int size;
 
-	if (!Buffer<T>::getParam(std::string("size"), size)) {
+	if (!Buffer<T>::getParam(std::string("size"), this->size_)) {
     	ROS_ERROR("[Buffer] Cannot find param size");
 		return false;
 	}
-
-	this->resize(size, 1);
 	
 	return true;
 }
@@ -37,14 +47,16 @@ bool RingBuffer<T>::configure(void) {
 template<typename T>
 bool RingBuffer<T>::add(const Eigen::Ref< const DynamicMatrix<T> >& in) {
 
-	if(this->is_configured_ == false) {
-		ROS_ERROR("[%s] Buffer is not configured", this->name().c_str());
-		return false;
+	if(this->is_set_ == false) {
+		this->is_set_ = this->set(this->size_, in.cols());
+		ROS_WARN("[%s] First apply: the buffer is set ([%d %ld])", this->name().c_str(), this->rows(), in.cols());
 	}
 
-	if(this->is_set_ == false) {
-		this->resize(this->rows(), in.cols());
-		this->is_set_ = true;
+	if(this->cols() != in.cols() ) {
+		this->is_set_ = this->set(this->rows(), in.cols());
+		ROS_WARN("[%s] Buffer and incoming data has different number of columns ([%d %d] vs. [%ld %ld])." 
+				 "The buffer will be automatically resized.", this->name().c_str(), this->rows(), 
+				  this->cols(), in.rows(), in.cols());
 	}
 
 	DynamicMatrix<T> cbuffer = this->data_.bottomRows(this->data_.rows() - in.rows());

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <algorithm>
 #include <ros/ros.h>
-#include "rosneuro_data/NeuroData.hpp"
 #include "rosneuro_buffers/Buffer.hpp"
 #include "rosneuro_buffers/RingBuffer.hpp"
 
