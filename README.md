@@ -10,7 +10,7 @@ rosneuro_buffers depends on:
 - [Eigen library](https://eigen.tuxfamily.org/index.php?title=Main_Page) 
 
 ## Usage
-Once instanciated, a buffer plugin creates a buffer with the provided type **T** and size *nsamples*. The buffer is initially filled with *nan* values. The function member *bool add(const DynamicMatrix<T>& in)* allows to update the buffer with new data and the function member *bool isfull(void)* verifies when the buffer is full. The buffer is updated with new data according to the replacement policy implemented in the provided plugin.
+Once instanciated, a buffer plugin creates a buffer with the provided type **T** and *size*. The buffer is initially filled with *nan* values. The function member *bool add(const DynamicMatrix\<T\>& in)* allows to update the buffer with new data and the function member *bool isfull(void)* verifies when the buffer is full. The buffer is updated with new data according to the replacement policy implemented in the provided plugin.
 In the case of **rosneuro::RingBuffer** plugin, the data replacement is performed according to a *FIFO* policy. 
 
 The buffer can be configured in the following way:
@@ -69,7 +69,7 @@ RingBufferCfgTest:
   name: myringbuffer
   type: RingBufferFloat
   params: 
-    nsamples: 10
+    size: 10
 ```
 File myringbuffer.launch with the launcher (where *$MYPACKAGE* is the path where the yaml file is):
 ```xml
@@ -78,7 +78,7 @@ File myringbuffer.launch with the launcher (where *$MYPACKAGE* is the path where
   <node name="myringbuffer" pkg="rosneuro_buffers" type="myringbuffer" output="screen"/>
 </launch>
 ```
-If the buffer is configured by *bool configure(void)* function (as in the case of YAML configuration), the number of channels is not required. The number of channels will be automatically deduced during the first call of the function *bool add(const DynamicMatrix<T>& in)*.
+If the buffer is configured by *bool configure(void)* function (as in the case of YAML configuration), the number of channels is not required. The number of channels will be automatically deduced during the first call of the function *bool add(const DynamicMatrix\<T\>& in)*.
 
 
 ### RingBuffer templates
@@ -141,7 +141,7 @@ void MyBuffer<T>::add(const DynamicMatrix<T>& in) {
 
 #endif
 ```
-Notice that the function member *MyBuffer/<T/>::configure(void)* is automatically called inside the method *rosneuro::Buffer/<T/>::configure(const std::string& name)*. Therefore, in order to execute the function member *MyBuffer/<T/>::configure(void)* is required to call the function *bool configure(const std::string& name)* in the executable with argument the name of the YAML structure.
+Notice that the function member *MyBuffer\<T\>::configure(void)* is automatically called inside the method *rosneuro::Buffer\<T\>::configure(const std::string& name)*. Therefore, in order to execute the function member *MyBuffer\<T\>::configure(void)* is required to call the function *bool configure(const std::string& name)* in the executable with argument the name of the YAML structure.
 
 In *src/MyBuffer.cpp*, we just add the plugin macros:
 ```cpp
