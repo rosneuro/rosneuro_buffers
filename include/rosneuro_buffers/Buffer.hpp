@@ -19,7 +19,7 @@ class Buffer {
 		Buffer& operator=(const Buffer&) = delete;
 
 		virtual bool configure(void) = 0;
-		virtual bool add(const Eigen::Ref< const DynamicMatrix<T> >& in) = 0;
+		virtual bool add(const DynamicMatrix<T>& in) = 0;
 		DynamicMatrix<T> get(void);
 
 		void resize(int rows, int cols);

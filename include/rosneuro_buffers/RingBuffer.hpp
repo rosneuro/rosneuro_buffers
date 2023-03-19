@@ -15,7 +15,7 @@ class RingBuffer : public Buffer<T> {
 		bool set(unsigned int nrows, unsigned int ncols);
 
 		bool configure(void);
-		bool add(const Eigen::Ref< const DynamicMatrix<T> >& in);
+		bool add(const DynamicMatrix<T>& in);
 	
 	private:
 		unsigned int size_;
@@ -45,7 +45,7 @@ bool RingBuffer<T>::configure(void) {
 }
 
 template<typename T>
-bool RingBuffer<T>::add(const Eigen::Ref< const DynamicMatrix<T> >& in) {
+bool RingBuffer<T>::add(const DynamicMatrix<T>& in) {
 
 	if(this->is_set_ == false) {
 		this->is_set_ = this->set(this->size_, in.cols());
