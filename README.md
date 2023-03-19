@@ -1,20 +1,16 @@
 # ROSNeuro Buffers package
-The package provides a generic interface to implement buffers of NeuroData. Different types of buffers can be independently developed and dynamically loaded through the interface. Currently, the package provides a plugin to instanciate a RingBuffer.
+The package provides a generic interface to implement buffers. Different types of buffers can be independently developed and dynamically loaded through the interface. Currently, the package provides a plugin to instanciate a RingBuffer.
 
 ## Requirements
 rosneuro_buffers has been tested with the following configuration:
 - **Ubuntu 18.04.05 LTS Bionic Beaver** and **ROS Melodic**
-- **Ubuntu 20.04.02 LTS Focal Fossa** and **ROS Noetic**
+- **Ubuntu 20.04.05 LTS Focal Fossa** and **ROS Noetic**
 
 rosneuro_buffers depends on:
-- [Eigen library](https://eigen.tuxfamily.org/index.php?title=Main_Page)
-
-rosneuro_buffers depends on the following @rosneuro packages:
-- [rosneuro/rosneuro_msgs](https://github.com/rosneuro/rosneuro_msgs) 
-- [rosneuro/rosneuro_data](https://github.com/rosneuro/rosneuro_data) 
+- [Eigen library](https://eigen.tuxfamily.org/index.php?title=Main_Page) 
 
 ## Usage
-Once instanciated, a buffer plugin creates a buffer of **NeuroData** with the provided type **T** and size *nsamples*x*nchannels*. The buffer is initially filled with *nan* values. The function member *void add(...)* allows to update the buffer with new *NeuroData* and the function member *bool isfull(void)* verifies when the buffer is full. The buffer is updated with new *NeuroData* according to the replacement policy implemented in the provided plugin.
+Once instanciated, a buffer plugin creates a buffer with the provided type **T** and size *nsamples*. The buffer is initially filled with *nan* values. The function member *bool add(const DynamicMatrix<T>& in)* allows to update the buffer with new data and the function member *bool isfull(void)* verifies when the buffer is full. The buffer is updated with new data according to the replacement policy implemented in the provided plugin.
 In the case of **rosneuro::RingBuffer** plugin, the data replacement is performed according to a *FIFO* policy. 
 
 The buffer can be configured in the following way:
@@ -30,12 +26,16 @@ int main(int argc, char** argv) {
 
   ros::init(argc, argv, "ringbuffer");
   
-  constexpr unsigned int nsamples  = 10;
-	constexpr unsigned int nchannels = 3;
+  constexpr int nsamples  = 10;
+  constexpr int nchannels = 3;
   
-  rosneuro::Buffer<float>* buffer = new rosneuro::RingBuffer<float>(nsamples, nchannels);
+  rosneuro::Buffer<float>* buffer = new rosneuro::RingBuffer<float>();
+  
+  buffer->set(nsamples, nchannels);
+  
   // ...
   // ...
+  
   delete buffer;
   return 0;
 }
@@ -52,11 +52,11 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "ringbuffer");
   
   rosneuro::Buffer<float>* buffer = new rosneuro::RingBuffer<float>();
-	if(buffer->configure("RingBufferCfgTest") == false) {
-		ROS_ERROR("RingBuffer configuration failed");
-		return false;
-	}
-	ROS_INFO("RingBuffer configuration succeeded");
+  if(buffer->configure("RingBufferCfgTest") == false) {
+  	ROS_ERROR("RingBuffer configuration failed");
+	return false;
+  }
+  ROS_INFO("RingBuffer configuration succeeded");
   // ...
   // ...
   delete buffer;
@@ -70,7 +70,6 @@ RingBufferCfgTest:
   type: RingBufferFloat
   params: 
     nsamples: 10
-    nchannels: 3
 ```
 File myringbuffer.launch with the launcher (where *$MYPACKAGE* is the path where the yaml file is):
 ```xml
@@ -79,11 +78,14 @@ File myringbuffer.launch with the launcher (where *$MYPACKAGE* is the path where
   <node name="myringbuffer" pkg="rosneuro_buffers" type="myringbuffer" output="screen"/>
 </launch>
 ```
+If the buffer is configured by *bool configure(void)* function (as in the case of YAML configuration), the number of channels is not required. The number of channels will be automatically deduced during the first call of the function *bool add(const DynamicMatrix<T>& in)*.
+
+
 ### RingBuffer templates
-The RingBuffer provides plugin for three type of NeuroData: *int*, *float*, and *double*. The different plugin can be loaded by providing the following types in the yaml configuration:
-- RingBufferInt (for *rosneuro::NeuroData\<int\>*)
-- RingBufferFloat (for *rosneuro::NeuroData\<float\>*)
-- RingBufferDouble (for *rosneuro::NeuroData\<double\>*)
+The RingBuffer provides plugin for three type of Eigen data: *int*, *float*, and *double*. The different plugin can be loaded by providing the following types in the yaml configuration:
+- RingBufferInt (for *Eigen::Matrix\<T, Eigen::Dynamic, Eigen::Dynamic\>*)
+- RingBufferFloat (for *Eigen::Matrix\<T, Eigen::Dynamic, Eigen::Dynamic\>*)
+- RingBufferDouble (for *Eigen::Matrix\<T, Eigen::Dynamic, Eigen::Dynamic\>*)
 
 ## How to implement a custom rosneuro::Buffer plugin
 In the following section, we describe how to implement a custom plugin based on *rosneuro::Buffer* class. We assume that the plugin is implemente in a new package named **mybuffers_package** and the plugin is named **MyBuffer**. Furthermore we assume that the *mybuffers_package* is structured as follows:
@@ -97,7 +99,7 @@ mybuffers_package/
 	|- package.xml
 	|- plugin_mybuffer.xml
 ```
-The *MyBuffer* class derives from the *rosneuro::Buffer* base class and it requires to implement the two pure virtual function members *void add(const NeuroData\<T\>& frame)* and *bool configure(void)*. Here an example of the implementation of the class in the *include/mybuffers_package/MyBuffer.hpp* file:
+The *MyBuffer* class derives from the *rosneuro::Buffer* base class and it requires to implement the two pure virtual function members *void add(const DynamicMatrix\<T\>& in)* and *bool configure(void)*. Here an example of the implementation of the class in the *include/mybuffers_package/MyBuffer.hpp* file:
 ```cpp
 #ifndef ROSNEURO_MYBUFFER_HPP
 #define ROSNEURO_MYBUFFER_HPP
@@ -114,34 +116,23 @@ class MyBuffer : public Buffer<T> {
 		~MyBuffer(void) {};
 
 		bool configure(void);
-		void add(const NeuroData<T>& frame);
+		void add(const DynamicMatrix<T>& in);
 
 };
 
 template<typename T>
 bool MyBuffer<T>::configure(void) {
 
-	unsigned int nsamples;
-	unsigned int nchannels;
-
-	if (!Buffer<T>::getParam(std::string("nsamples"), nsamples)) {
+	if (!Buffer<T>::getParam(std::string("size"), this->size_)) {
     	ROS_ERROR("[MyBuffer] Cannot find param nsamples");
 		return false;
 	}
-	
-	if (!Buffer<T>::getParam(std::string("nchannels"), nchannels)) {
-    	ROS_ERROR("[MyBuffer] Cannot find param nchannels");
-		return false;
-	}
-
-	this->data_.resize(nsamples, nchannels);
-	this->data_.fill(static_cast<T>(NAN));
 
 	return true;
 }
 
 template<typename T>
-void MyBuffer<T>::add(const NeuroData<T>& frame) {
+void MyBuffer<T>::add(const DynamicMatrix<T>& in) {
 
 	// Specific implementation of MyBuffer
 }
@@ -172,9 +163,7 @@ find_package(catkin REQUIRED COMPONENTS
 			 roscpp 
 			 roslib
 			 std_msgs
-			 pluginlib
-			 rosneuro_data
-			 rosneuro_msgs)
+			 pluginlib)
 find_package(PkgConfig)
 
 SET(CMAKE_BUILD_TYPE RelWithDebInfo)
@@ -189,8 +178,6 @@ catkin_package(
   	roscpp
 	std_msgs
 	pluginlib
-	rosneuro_data
-	rosneuro_msgs
   DEPENDS
 )
 
@@ -219,8 +206,8 @@ In the *package.xml* we need to add the dependency to the pluginlib package and 
   <name>mybuffers_package</name>
   <version>0.0.1</version>
   <description>My buffers package</description>
-  <author email="luca.tonin@dei.unipd.it">Luca Tonin</author>
-  <maintainer email="luca.tonin@dei.unipd.it">Luca Tonin</maintainer>
+  <author email="luca.tonin@unipd.it">Luca Tonin</author>
+  <maintainer email="luca.tonin@unipd.it">Luca Tonin</maintainer>
 
   <license>GPLv3</license>
 
@@ -229,8 +216,6 @@ In the *package.xml* we need to add the dependency to the pluginlib package and 
   <depend>std_msgs</depend>
   <depend>message_generation</depend>
 
-  <depend>rosneuro_data</depend>
-  <depend>rosneuro_msgs</depend>
   <exec_depend>message_runtime</exec_depend>
   <depend>eigen</depend>
   <depend>roslib</depend>
