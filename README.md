@@ -1,5 +1,5 @@
 # ROS-Neuro Buffers package
-The package provides a generic interface to implement buffers. Different types of buffers can be independently developed and dynamically loaded through the interface. Currently, the ROS-Neuro provides the following plugins:
+The package provides a generic interface to implement buffers. Different types of buffers can be independently developed and dynamically loaded through the interface. Currently, the **ROS-Neuro** provides the following plugins:
 
 - [rosneuro_buffers_ringbuffer](https://github.com/rosneuro/rosneuro_buffers_ringbuffer) (Implementation of FIFO ring buffer)
 
