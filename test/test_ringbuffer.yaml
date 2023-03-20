@@ -1,5 +1,0 @@
-RingBufferCfgTest:
-  name: ringbuffer
-  type: RingBufferFloat
-  params: 
-    size: 20
