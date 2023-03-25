@@ -17,7 +17,8 @@ class Buffer {
 
 		Buffer(const Buffer&) = delete;
 		Buffer& operator=(const Buffer&) = delete;
-
+		
+		bool set(unsigned int nrows, unsigned int ncols);
 		virtual bool configure(void) = 0;
 		virtual bool add(const DynamicMatrix<T>& in) = 0;
 		DynamicMatrix<T> get(void);
@@ -34,6 +35,8 @@ class Buffer {
 	protected:
 		bool is_configured_;
 		bool is_set_;
+		unsigned int size_;
+		
 		std::string type_;
 		std::string name_;
 	
@@ -73,6 +76,15 @@ Buffer<T>::Buffer(void) : is_configured_(false), is_set_(false) {}
 
 template<typename T>
 Buffer<T>::~Buffer(void) {}
+
+template<typename T>
+bool Buffer<T>::set(unsigned int nrows, unsigned int ncols) {
+	this->resize(nrows, ncols);
+	this->is_set_ = true;
+
+	return true;
+}
+
 
 template<typename T>
 void Buffer<T>::resize(int rows, int cols) {
