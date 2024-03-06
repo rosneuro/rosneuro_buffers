@@ -4,6 +4,8 @@
 #include <ros/ros.h>
 #include <Eigen/Dense>
 
+#include <gtest/gtest_prod.h>
+
 namespace rosneuro {
 
 template<typename T> using DynamicMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
@@ -69,6 +71,14 @@ class Buffer {
 	private:
 		ros::NodeHandle nh_;
 
+        FRIEND_TEST(BufferTestSuite, GetParamString);
+        FRIEND_TEST(BufferTestSuite, GetParamBool);
+        FRIEND_TEST(BufferTestSuite, GetParamDouble);
+        FRIEND_TEST(BufferTestSuite, GetParamInt);
+        FRIEND_TEST(BufferTestSuite, GetParamUnsignedInt);
+        FRIEND_TEST(BufferTestSuite, GetParamVectorDouble);
+        FRIEND_TEST(BufferTestSuite, GetParamVectorString);
+        FRIEND_TEST(BufferTestSuite, GetParamXmlRpcValue);
 };
 
 template<typename T>
