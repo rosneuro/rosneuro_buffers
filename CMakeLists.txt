@@ -29,7 +29,7 @@ catkin_package(
   DEPENDS
 )
 
-catkin_add_gtest(test_buffer test/test_buffer.cpp)
+catkin_add_gtest(test_buffer test/TestBuffer.cpp)
 target_link_libraries(test_buffer ${GTEST_BOTH_LIBRARIES} pthread gmock ${Eigen3_LIBRARIES})
 target_link_libraries(test_buffer ${PROJECT_NAME} ${catkin_LIBRARIES})
 include_directories(${GTEST_INCLUDE_DIRS} gmock pthread)
