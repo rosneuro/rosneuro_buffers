@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 find_package(PkgConfig)
+find_package(GTest REQUIRED)
 
 SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 
@@ -28,6 +29,14 @@ catkin_package(
   DEPENDS
 )
 
+###########
+## Test  ##
+###########
+
+catkin_add_gtest(test_buffer test/TestBuffer.cpp)
+target_link_libraries(test_buffer ${GTEST_BOTH_LIBRARIES} pthread gmock ${Eigen3_LIBRARIES})
+target_link_libraries(test_buffer ${PROJECT_NAME} ${catkin_LIBRARIES})
+include_directories(${GTEST_INCLUDE_DIRS} gmock pthread include/${PROJECT_NAME}/)
 
 ###########
 ## Build ##
